@@ -1,5 +1,7 @@
 # Docker Image: Alpine Linux Ansible
 
+![License](https://img.shields.io/github/license/centinel/docker-alpine-ansible) ![Build Status](https://img.shields.io/gitlab/pipeline/centinel-foss/docker-alpine-ansible/master)
+
 This [Docker](https://www.docker.com) project is a [Dockerfile](https://docs.docker.com/engine/reference/builder/) that can build a Docker container based on the latest version of [Alpine Linux](https://www.alpinelinux.org/). 
 
 It includes all of the software that you should need to test [Ansible](https://www.ansible.com) [roles](https://docs.ansible.com/ansible/latest/user_guide/playbooks_reuse_roles.html) during development.
