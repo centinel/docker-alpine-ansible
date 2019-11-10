@@ -1,0 +1,66 @@
+---
+stages:
+  - build
+  - deploy
+
+.ci_step:
+  image: docker:stable
+  services:
+    - docker:stable-dind
+
+variables:
+  DOCKER_DRIVER: overlay2
+  DOCKER_HOST: tcp://docker:2376
+  DOCKER_TLS_CERTDIR: "/certs"
+  GITLAB_IMAGE_TAG: $CI_REGISTRY_IMAGE:latest
+  DOCKER_HUB_IMAGE_TAG: $DOCKER_HUB_USERNAME/docker-alpine-ansible:latest
+  
+build_image:
+  extends: .ci_step
+  stage: build
+  tags:
+    - docker
+  script:
+    - docker build -t $CI_PROJECT_NAME .
+    # Test running the image
+    - docker run -td --name test-container $CI_PROJECT_NAME
+    - docker exec test-container
+        ansible --version
+    - docker exec test-container
+        docker --version
+    - docker exec test-container
+        molecule --version
+    - docker exec test-container
+        tox --version
+    - docker save -o $CI_PROJECT_NAME.tar $CI_PROJECT_NAME
+  artifacts:
+    paths:
+      - $CI_PROJECT_NAME.tar
+    expire_in: 1 hour
+  rules:
+    - changes:
+      - Dockerfile
+      - scripts/*
+      when: always
+    - when: never
+
+deploy_image:
+  extends: .ci_step
+  stage: deploy
+  tags:
+    - docker
+  before_script:
+    - docker load --input $CI_PROJECT_NAME.tar
+  script:
+    - ls
+    - ./scripts/deploy_gitlab.sh
+    - ./scripts/deploy_docker_hub.sh
+  dependencies:
+    - build_image
+  rules:
+    - if: '$CI_COMMIT_REF_NAME == "master"'
+      changes:
+        - Dockerfile
+        - scripts/*
+      when: on_success
+    - when: never
